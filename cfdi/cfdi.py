@@ -177,66 +177,7 @@ class CfdiStamp(object):
         base64_str = c.std_out
         base64_str = base64_str.replace('\n',"")
         return base64_str
-    def get_cadena(self):
-        #creo archivo tmp del xml
-        
-        file_obj, file_tmp_path = tempfile.mkstemp()
-        os.write(file_obj, self.cfdi_xml)
-        #Se genera cadena original y se firma esa cadena con el pem del cliente
-        command = "xsltproc %s %s " % (
-                self.xslt_path,
-                file_tmp_path,
-                )
-        c = envoy.run(command)
-        os.remove(file_tmp_path)
-        
-        #con openssl es necesario tener el archivo.xml como file?
-        return c.std_out
 
-    def get_sello(self):
-        #creo archivo tmp del xml
-        print "CADENA----------------"
-        #print self.get_cadena()
-
-        #file_obj, file_tmp_path = tempfile.mkstemp()
-        #os.write(file_obj, self.cfdi_xml)
-      
-
-        res_file = open(PATH+'/xml_generado.xml', 'w')
-        res_file.write(self.cfdi_xml)
-        res_file.close()
-
-      
-        path_file = os.path.join(PATH, "xml_generado.xml")
-        print path_file
-        #Se genera cadena original y se firma esa cadena con el pem del cliente
-        command = "xsltproc %s %s | openssl dgst -sha256 -sign %s | openssl enc -base64 -A" % (
-                self.xslt_path,
-                path_file,
-                self.pem_path
-                )
-        
-        c = envoy.run(command)
-        #os.remove(file_tmp_path)
-        self.sello = c.std_out
-        return self.sello
-    
-    def add_sello(self):
-        sello = self.get_sello()
-        #Agregamos el sello, numcert y cert en base 64 como atributos de Comprobante
-        #https://stackoverflow.com/a/31714567/4187115
-        utf8_parser = ET.XMLParser(encoding='utf-8')
-        tree = ET.fromstring(self.cfdi_xml.encode('utf-8'), parser=utf8_parser)
-        tree.attrib['Sello'] = sello
-        #tree.attrib['NoCertificado'] = self.cer_num
-        tree.attrib['Certificado'] = self.cer_base64()
-        self.xml_sellado = tree
-
-        return self._to_xml()
-
-
-    ###ROGER
-    #def get_sello_fm(self, cfdi, numero_certificado, archivo_cer, archivo_pem):
     def get_sello_fm(self, cfdi):
         keys = RSA.load_key(self.pem_path)
         cert_file = open(self.cer_path, 'r')
@@ -258,10 +199,5 @@ class CfdiStamp(object):
         comp = xdoc.get('Comprobante')
         xdoc.attrib['Sello'] = sello
 
-        res_file = open('sellado.xml', 'w')
-        res_file.write(str(ET.tostring(xdoc)))
-        res_file.close()
-        
-        print ET.tostring(xdoc)
         return ET.tostring(xdoc)
     ###Termina
