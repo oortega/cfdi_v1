@@ -3,6 +3,9 @@
 from lxml import etree as ET
 import datetime
 from collections import OrderedDict
+##ROGER
+
+##termina
 
 class SATcfdi(object):
     CERT_NUM = '20001000000300022815'
