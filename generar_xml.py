@@ -41,3 +41,8 @@ print xml_sellado
 # second.text = '01'
 
 #print ET.tostring(root, pretty_print=True, xml_declaration=True)
+
+
+##ROGER
+
+##termina

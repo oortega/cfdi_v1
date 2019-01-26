@@ -154,3 +154,9 @@ class CfdiStamp(object):
         args = '"{3}" "{0}" "{1}" | "{4}" dgst -sha256 -sign "{2}" | ' \
             '"{4}" enc -base64 -A'.format(
             path_xslt, path_xml, path_pem, PATH_XSLTPROC, PATH_OPENSSL)
+
+    ###ROGER
+
+
+
+    ###Termina
