@@ -4,6 +4,7 @@ import datetime
 import json
 import os
 from cfdi.cfdi import SATcfdi, CfdiStamp
+from cfdi.finkok import PACFinkok
 import tempfile
 
 PATH = os.path.abspath(os.path.dirname(__file__))
@@ -129,8 +130,17 @@ def timbrar():
 cfdi = SATcfdi(datos)
 xml = cfdi.get_xml()
 cfdistamp = CfdiStamp(cfdi, key_path, cert_path, pem_path,CERT_NUM)
-xml = cfdistamp.get_sello_fm(xml, CERT_NUM, cert_path, pem_path)
+xml = cfdistamp.get_sello_fm(xml)
 
-timbrar()
+#timbrar()
+
+timbrar = PACFinkok()
+result = timbrar.cfdi_stamp(xml)
+
+if result:
+    print result['xml']
+else:
+    print timbrar.error
+
 
 ##termina
