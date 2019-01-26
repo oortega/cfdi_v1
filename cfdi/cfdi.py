@@ -3,12 +3,15 @@
 from lxml import etree as ET
 import datetime
 from collections import OrderedDict
+import os
+import tempfile
+import envoy
+from io import StringIO, BytesIO
 ##ROGER
 
 ##termina
 
 class SATcfdi(object):
-    CERT_NUM = '20001000000300022815'
     CFDI_VERSION = 'cfdi33'
     XSI = 'http://www.w3.org/2001/XMLSchema-instance' ##????
     SAT = {
@@ -26,15 +29,15 @@ class SATcfdi(object):
         },
     }
 
-    def __init__(self, data, CERT_NUM=CERT_NUM, version=CFDI_VERSION ):
+    def __init__(self, data, version=CFDI_VERSION ):
         self._sat_cfdi = self.SAT[version]
         self._name_space = '{{{}}}'.format(self._sat_cfdi['xmlns'])
         self._xsi = self.XSI
         self._pre = self._sat_cfdi['prefix']
         self._cfdi_xml = None
         self.error = ''
-        self.CERT_NUM = CERT_NUM
         self._data = data
+
 
     def _now(self):
         return datetime.datetime.now().isoformat()[:19]
@@ -66,6 +69,10 @@ class SATcfdi(object):
         node_name = '{}Comprobante'.format(self._name_space)
         attrib = self._data['comprobante'] # OrderedDict(self._data['comprobante'])
         attrib[schema_location] = self._sat_cfdi['schema']
+
+        attrib['Version'] = self._sat_cfdi['version']
+        attrib['Fecha'] = self._now()
+
         self._cfdi_xml = ET.Element(node_name, attrib, nsmap=nsmap)
         '''
         porque schemaLocation no lo definiste en nmap si esta como xmlnsi: ya vi es un xsi
@@ -144,19 +151,60 @@ class SATcfdi(object):
 
 class CfdiStamp(object):
     
-    PAHT_XSLT=os.path.join("cfdi/xslt","cadena_3.3_1.2.xslt")
+    XSLT_PATH=os.path.join("cfdi/xslt","cadena_3.3_1.2.xslt")
 
-    def __init__(self, cfdi_xml, key_path, cert_path, pem_path, path_xslt=PAHT_XSLT ):
-        self.cfdi_xml = cdfi_xml
+    def __init__(self, cfdi_xml, key_path, cer_path, pem_path, cer_num, xslt_path=XSLT_PATH ):
+        self.cfdi_xml = cfdi_xml
         self.key_path = key_path
-        self.cert_path = cert_path
+        self.cer_path = cer_path
         self.pem_path = pem_path
+        self.xslt_path = xslt_path
+        self.cer_num = cer_num
+        self.xml_sellado = None
+    
+    def _to_xml(self):
+        self.xml_sellado = ET.tostring(self.xml_sellado,
+            pretty_print=True, xml_declaration=True, encoding='utf-8')
+        
+        return self.xml_sellado.decode('utf-8')
+
+    def cer_base64(self):
+        c = envoy.run("openssl enc -base64 -in %s" % self.cer_path)
+        base64_str = c.std_out
+        base64_str = base64_str.replace('\n',"")
+        return base64_str
 
     def get_sello(self):
-        _validate_num_cer(path_xml, path_cer)
-        args = '"{3}" "{0}" "{1}" | "{4}" dgst -sha256 -sign "{2}" | ' \
-            '"{4}" enc -base64 -A'.format(
-            path_xslt, path_xml, path_pem, PATH_XSLTPROC, PATH_OPENSSL)
+        #creo archivo tmp del xml
+        print type(self.cfdi_xml)
+        file_obj, file_tmp_path = tempfile.mkstemp()
+        os.write(file_obj, self.cfdi_xml)
+        #Se genera cadena original y se firma esa cadena con el pem del cliente
+        command = "xsltproc %s %s | openssl dgst -sha256 -sign %s | openssl enc -base64 -A" % (
+                self.xslt_path,
+                file_tmp_path,
+                self.pem_path
+                )
+        
+        c = envoy.run(command)
+        os.remove(file_tmp_path)
+        self.sello = c.std_out
+        #con openssl es necesario tener el archivo.xml como file?
+        return self.sello
+    
+    def add_sello(self):
+        sello = self.get_sello()
+        #Agregamos el sello, numcert y cert en base 64 como atributos de Comprobante
+        #https://stackoverflow.com/a/31714567/4187115
+        utf8_parser = ET.XMLParser(encoding='utf-8')
+        tree = ET.fromstring(self.cfdi_xml.encode('utf-8'), parser=utf8_parser)
+        tree.attrib['Sello'] = sello
+        tree.attrib['NoCertificado'] = self.cer_num
+        tree.attrib['Certificado'] = self.cer_base64()
+        self.xml_sellado = tree
+
+        return self._to_xml()
+
 
     ###ROGER
 
