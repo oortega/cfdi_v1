@@ -1,8 +1,12 @@
 #!
 # -*- coding: utf-8 -*-
+import os
 from lxml import etree as ET
 import datetime
 from collections import OrderedDict
+from M2Crypto import RSA
+import base64
+import hashlib
 ##ROGER
 
 ##termina
@@ -147,10 +151,11 @@ class CfdiStamp(object):
     PAHT_XSLT=os.path.join("cfdi/xslt","cadena_3.3_1.2.xslt")
 
     def __init__(self, cfdi_xml, key_path, cert_path, pem_path, path_xslt=PAHT_XSLT ):
-        self.cfdi_xml = cdfi_xml
+        self.cfdi_xml = cfdi_xml
         self.key_path = key_path
         self.cert_path = cert_path
         self.pem_path = pem_path
+        
 
     def get_sello(self):
         _validate_num_cer(path_xml, path_cer)
@@ -159,7 +164,27 @@ class CfdiStamp(object):
             path_xslt, path_xml, path_pem, PATH_XSLTPROC, PATH_OPENSSL)
 
     ###ROGER
+    def get_sello_fm(self, cfdi, numero_certificado, archivo_cer, archivo_pem):
+        keys = RSA.load_key(archivo_pem)
+        cert_file = open(archivo_cer, 'r')
+        cert = base64.b64encode(cert_file.read())
+        utf8_parser = ET.XMLParser(encoding='utf-8')
+        xdoc = ET.fromstring(cfdi.encode('utf-8'), parser=utf8_parser)
+        # xdoc = ET.fromstring(cfdi)
 
+        comp = xdoc.get('Comprobante')
+        xdoc.attrib['Certificado'] = cert
+        xdoc.attrib['NoCertificado'] = numero_certificado
 
+        xsl_root = ET.parse(self.PAHT_XSLT)
+        xsl = ET.XSLT(xsl_root)
+        cadena_original = xsl(xdoc)
+        digest = hashlib.new('sha256', str(cadena_original)).digest()
+        sello = base64.b64encode(keys.sign(digest, "sha256"))
 
+        comp = xdoc.get('Comprobante')
+        xdoc.attrib['Sello'] = sello
+
+        print ET.tostring(xdoc)
+        return ET.tostring(xdoc)
     ###Termina
