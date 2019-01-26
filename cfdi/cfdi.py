@@ -10,7 +10,7 @@ from io import StringIO, BytesIO
 ##ROGER
 
 ##termina
-
+PATH = os.path.abspath(os.path.dirname(__file__))
 class SATcfdi(object):
     CFDI_VERSION = 'cfdi33'
     XSI = 'http://www.w3.org/2001/XMLSchema-instance' ##????
@@ -151,8 +151,8 @@ class SATcfdi(object):
 
 class CfdiStamp(object):
     
-    XSLT_PATH=os.path.join("cfdi/xslt","cadena_3.3_1.2.xslt")
-
+    XSLT_PATH=os.path.join(PATH, "xslt","cadena_3.3_1.2.xslt")
+    
     def __init__(self, cfdi_xml, key_path, cer_path, pem_path, cer_num, xslt_path=XSLT_PATH ):
         self.cfdi_xml = cfdi_xml
         self.key_path = key_path
@@ -173,23 +173,48 @@ class CfdiStamp(object):
         base64_str = c.std_out
         base64_str = base64_str.replace('\n',"")
         return base64_str
-
-    def get_sello(self):
+    def get_cadena(self):
         #creo archivo tmp del xml
-        print type(self.cfdi_xml)
+        
         file_obj, file_tmp_path = tempfile.mkstemp()
         os.write(file_obj, self.cfdi_xml)
         #Se genera cadena original y se firma esa cadena con el pem del cliente
-        command = "xsltproc %s %s | openssl dgst -sha256 -sign %s | openssl enc -base64 -A" % (
+        command = "xsltproc %s %s " % (
                 self.xslt_path,
                 file_tmp_path,
+                )
+        c = envoy.run(command)
+        os.remove(file_tmp_path)
+        
+        #con openssl es necesario tener el archivo.xml como file?
+        return c.std_out
+
+    def get_sello(self):
+        #creo archivo tmp del xml
+        print "CADENA----------------"
+        #print self.get_cadena()
+
+        #file_obj, file_tmp_path = tempfile.mkstemp()
+        #os.write(file_obj, self.cfdi_xml)
+      
+
+        res_file = open(PATH+'/xml_generado.xml', 'w')
+        res_file.write(self.cfdi_xml)
+        res_file.close()
+
+      
+        path_file = os.path.join(PATH, "xml_generado.xml")
+        print path_file
+        #Se genera cadena original y se firma esa cadena con el pem del cliente
+        command = "xsltproc %s %s | openssl dgst -sha256 -sign %s | openssl enc -base64 -A" % (
+                self.xslt_path,
+                path_file,
                 self.pem_path
                 )
         
         c = envoy.run(command)
-        os.remove(file_tmp_path)
+        #os.remove(file_tmp_path)
         self.sello = c.std_out
-        #con openssl es necesario tener el archivo.xml como file?
         return self.sello
     
     def add_sello(self):
@@ -199,7 +224,7 @@ class CfdiStamp(object):
         utf8_parser = ET.XMLParser(encoding='utf-8')
         tree = ET.fromstring(self.cfdi_xml.encode('utf-8'), parser=utf8_parser)
         tree.attrib['Sello'] = sello
-        tree.attrib['NoCertificado'] = self.cer_num
+        #tree.attrib['NoCertificado'] = self.cer_num
         tree.attrib['Certificado'] = self.cer_base64()
         self.xml_sellado = tree
 

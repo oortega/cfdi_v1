@@ -21,14 +21,20 @@ with open('cfdi_minimo.json') as f:
 
 cfdi = SATcfdi(datos)
 cfdi_xml =  cfdi.get_xml()
-print cfdi_xml
+#print cfdi_xml
+
 #print datos
 
 #Sellamos la Factura
 
-xml_sellado = CfdiStamp(cfdi_xml, key_path, cert_path, pem_path, CERT_NUM)
-xml_sellado = xml_sellado.add_sello()
-print xml_sellado
+xml_instace = CfdiStamp(cfdi_xml, key_path, cert_path, pem_path, CERT_NUM)
+xml_sellado = xml_instace.add_sello()
+#print xml_sellado
+
+res_file = open('sellado.xml', 'w')
+res_file.write(xml_sellado)
+res_file.close()
+
 
 #Timbramos la factura
 
@@ -43,24 +49,20 @@ password = 'Wisphub@cuentas1'
 #os.write(file_obj, xml_sellado)
 
 # invoice_path = "invoice.xml"
-invoice_path = "sellado_local.xml"
-file = open(invoice_path)
-print file
+invoice_path = "sellado.xml"
+file = open(invoice_path, 'r')
+
 lines = "".join(file.readlines())
 xml = base64.encodestring(lines)
-print xml
+ 
 
 # Consuming the stamp service
 url = "https://demo-facturacion.finkok.com/servicios/soap/stamp.wsdl"
 client = Client(url,cache=None)
 contenido = client.service.stamp(xml,username,password)
-print contenido
 xml = contenido.xml
-print xml
+print contenido
 # Get stamped xml
-archivo = open("stamp.xml","w")
-archivo.write(str(xml))
-archivo.close()
 
 
 # from lxml import etree as ET
