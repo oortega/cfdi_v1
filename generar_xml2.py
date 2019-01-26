@@ -18,13 +18,11 @@ path_xlst = os.path.join("cfdi/xslt","cadena_3.3_1.2.xslt")
 
 def timbrar():
     from suds.client import Client
-    import logging
     import base64
 
-     
     # Username and Password, assigned by FINKOK
-    username = 'wisphub@gmail.com'
-    password = 'Wisphub@cuentas1'
+    username = 'pruebas-finkok@correolibre.net'
+    password = '5c9a88da105bff9a8c430cb713f6d35269f51674bdc5963c1501b7316366'
      
     # Read the xml file and encode it on base64
     invoice_path = "sellado.xml"
