@@ -8,8 +8,6 @@ from M2Crypto import RSA
 import base64
 import hashlib
 import os
-import tempfile
-import envoy
 from io import StringIO, BytesIO
 ##ROGER
 
@@ -172,14 +170,10 @@ class CfdiStamp(object):
         
         return self.xml_sellado.decode('utf-8')
 
-    def cer_base64(self):
-        c = envoy.run("openssl enc -base64 -in %s" % self.cer_path)
-        base64_str = c.std_out
-        base64_str = base64_str.replace('\n',"")
-        return base64_str
 
     def get_sello_fm(self, cfdi):
         keys = RSA.load_key(self.pem_path)
+        #Obtenemos el cert para convertirlo 
         cert_file = open(self.cer_path, 'r')
         cert = base64.b64encode(cert_file.read())
         utf8_parser = ET.XMLParser(encoding='utf-8')
@@ -189,13 +183,14 @@ class CfdiStamp(object):
         comp = xdoc.get('Comprobante')
         xdoc.attrib['Certificado'] = cert
         xdoc.attrib['NoCertificado'] = self.cer_num
-
+        #Obtenemos cadena original
         xsl_root = ET.parse(self.XSLT_PATH)
         xsl = ET.XSLT(xsl_root)
         cadena_original = xsl(xdoc)
+        #Firmamos la cadena original con el
         digest = hashlib.new('sha256', str(cadena_original)).digest()
         sello = base64.b64encode(keys.sign(digest, "sha256"))
-
+        #agregamos el atributo sello al xml
         comp = xdoc.get('Comprobante')
         xdoc.attrib['Sello'] = sello
 
