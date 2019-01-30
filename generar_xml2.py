@@ -21,8 +21,8 @@ def timbrar():
     import base64
 
     # Username and Password, assigned by FINKOK
-    username = 'pruebas-finkok@correolibre.net'
-    password = '5c9a88da105bff9a8c430cb713f6d35269f51674bdc5963c1501b7316366'
+    username = 'pedro'
+    password = '08ab5d7ba6c320987f10663806632bac31026e827d24aa3a175f372af7ab'
      
     # Read the xml file and encode it on base64
     invoice_path = "sellado.xml"

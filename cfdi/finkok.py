@@ -20,8 +20,8 @@ DEBUG_SOAP = True
 
 FINKOK = {
     'AUTH': {
-        'USER': 'pruebas-finkok@correolibre.net',
-        'PASS': '5c9a88da105bff9a8c430cb713f6d35269f51674bdc5963c1501b7316366',
+        'USER': 'pedro',
+        'PASS': '08ab5d7ba6c320987f10663806632bac31026e827d24aa3a175f372af7ab',
     },
     'RESELLER': {
         'USER': '',
