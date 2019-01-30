@@ -1,0 +1,3 @@
+lxml
+M2Crypto
+zeep
