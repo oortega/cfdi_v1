@@ -1,7 +1,8 @@
-#Timbrar CFDI 
-Generar xml, sellar y timbrar. Para timbrar la factura usamos Finkok
-#Se genera el sello usando M2Crypto
+#CFDI
 
+Generar xml, sellar y timbrar. Para timbrar la factura usamos Finkok
+
+#Se genera el sello usando M2Crypto
 
 #antes de instalar los requirements instalar esto:
 sudo apt-get install python-dev  \
